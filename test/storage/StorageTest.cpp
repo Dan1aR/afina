@@ -16,7 +16,18 @@ using namespace Afina::Backend;
 using namespace Afina::Execute;
 using namespace std;
 
+TEST(StorageTest, Put) {
+    SimpleLRU storage;
 
+    for (int i = 0; i < 5; ++i) {
+        EXPECT_TRUE(storage.Put("KEY"+std::to_string(i), "val"+std::to_string(i)));
+    }
+    for (int i = 0; i < 3; ++i) {
+        EXPECT_TRUE(storage.Put("KEY"+std::to_string(i), "lav"+std::to_string(i)));
+    }
+
+    storage.print();
+}
 
 
 TEST(StorageTest, PutGet) {
@@ -45,6 +56,7 @@ TEST(StorageTest, PutOverwrite) {
 }
 
 TEST(StorageTest, PutIfAbsent) {
+
     SimpleLRU storage;
 
     EXPECT_TRUE(storage.PutIfAbsent("KEY1", "val1"));
@@ -86,17 +98,23 @@ TEST(StorageTest, PutDeleteGet) {
     EXPECT_TRUE(storage.Put("KEY1", "val1"));
     EXPECT_TRUE(storage.Put("KEY2", "val2"));
 
+    storage.print();
+
     EXPECT_TRUE(storage.Delete("KEY1"));
+
+    storage.print();
 
     std::string value;
     EXPECT_FALSE(storage.Get("KEY1", value));
     EXPECT_TRUE(storage.Get("KEY2", value));
     EXPECT_TRUE(value == "val2");
+
+    EXPECT_TRUE(storage.Delete("KEY2"));
+    storage.print();
 }
 
 
-TEST(StorageTest, GetIfAbsent)
-{
+TEST(StorageTest, GetIfAbsent) {
     SimpleLRU storage;
 
 
@@ -108,9 +126,9 @@ TEST(StorageTest, GetIfAbsent)
     EXPECT_FALSE(storage.Get("KEY3", value));
 }
 
-TEST(StorageTest, DeleteIfAbsent)
-{
+TEST(StorageTest, DeleteIfAbsent) {
     SimpleLRU storage;
+
     EXPECT_FALSE(storage.Delete("KEY1"));
 
     EXPECT_FALSE(storage.Delete("KEY2"));
@@ -118,8 +136,7 @@ TEST(StorageTest, DeleteIfAbsent)
     EXPECT_FALSE(storage.Delete("KEY3"));
 }
 
-TEST(StorageTest, DeleteHeadAndTailNode)
-{
+TEST(StorageTest, DeleteHeadAndTailNode) {
     SimpleLRU storage;
 
     EXPECT_TRUE(storage.Put("KEY1", "val1"));
@@ -135,8 +152,10 @@ TEST(StorageTest, DeleteHeadAndTailNode)
     EXPECT_TRUE(storage.Set("KEY1", "val41"));
     // After that, KEY1 should be first in the rating.
     // And KEY4 should be the last.
+    storage.print();
     EXPECT_TRUE(storage.Delete("KEY4"));
     EXPECT_TRUE(storage.Delete("KEY1"));
+    storage.print();
 }
 
 std::string pad_space(const std::string &s, size_t length) {
@@ -172,7 +191,7 @@ TEST(StorageTest, MaxTest) {
 
     std::stringstream ss;
 
-    for (long i = 0; i < 1100; ++i) {
+    for (long i = 100; i < 1100; ++i) {
         auto key = pad_space("Key " + std::to_string(i), length);
         auto val = pad_space("Val " + std::to_string(i), length);
         EXPECT_TRUE(storage.Put(key, val));
