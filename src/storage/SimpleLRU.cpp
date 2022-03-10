@@ -88,12 +88,12 @@ void SimpleLRU::put_node_in_head(lru_node *tmp_node) {
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::Put(const std::string &key, const std::string &value) { 
     // check if key in cache - set if in
-    for (auto it = _lru_index.begin(); it != _lru_index.end(); ++it) {
-        if (it->first.get() == key) {
-            _lru_index.at(key).get().value = value;
-            put_node_in_head(&it->second.get());
-            return true;
-        }
+
+    auto it = _lru_index.find(key);
+    if (it != _lru_index.end()) {
+        _lru_index.at(key).get().value = value;
+        put_node_in_head(&it->second.get());
+        return true;
     }
 
     // if not - check in list
@@ -112,7 +112,8 @@ bool SimpleLRU::Put(const std::string &key, const std::string &value) {
     // create new node
     lru_node *node = new lru_node(key, value);
 
-    cache_cleaner(sizeof(key), sizeof(node));
+    // size of reference wrapper = 8
+    cache_cleaner(8, sizeof(node));
 
     put_node_in_head(node);
 
@@ -131,10 +132,9 @@ bool SimpleLRU::Put(const std::string &key, const std::string &value) {
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::PutIfAbsent(const std::string &key, const std::string &value) { 
     // check if key in cache - set if in
-    for (auto it = _lru_index.begin(); it != _lru_index.end(); ++it) {
-        if (it->first.get() == key) {
-            return false;
-        }
+    auto it = _lru_index.find(key);
+    if (it != _lru_index.end()) {
+        return false;
     }
 
     // if not - check in list
@@ -172,12 +172,12 @@ bool SimpleLRU::PutIfAbsent(const std::string &key, const std::string &value) {
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::Set(const std::string &key, const std::string &value) { 
     // check if key in cache - set if in
-    for (auto it = _lru_index.begin(); it != _lru_index.end(); ++it) {
-        if (it->first.get() == key) {
-            _lru_index.at(key).get().value = value;
-            put_node_in_head(&it->second.get());
-            return true;
-        }
+
+    auto it = _lru_index.find(key);
+    if (it != _lru_index.end()) {
+        _lru_index.at(key).get().value = value;
+        put_node_in_head(&it->second.get());
+        return true;
     }
 
     // if not - check in list
@@ -199,17 +199,17 @@ bool SimpleLRU::Set(const std::string &key, const std::string &value) {
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::Delete(const std::string &key) { 
     // check if key in cache - set if in
-    for (auto it = _lru_index.begin(); it != _lru_index.end(); ++it) {
-        if (it->first.get() == key) {
-            _lru_index.erase( it );
-            release_node(&it->second.get());
-            if (_lru_index.size() == 0) {
-                _lru_head.release();
-                _lru_tail.release();
-            }
 
-            return true;
+    auto it = _lru_index.find(key);
+    if (it != _lru_index.end()) {
+        _lru_index.erase( it );
+        release_node(&it->second.get());
+        if (_lru_index.size() == 0) {
+            _lru_head.release();
+            _lru_tail.release();
         }
+
+        return true;
     }
 
     // if not - check in list
@@ -228,11 +228,11 @@ bool SimpleLRU::Delete(const std::string &key) {
 // See MapBasedGlobalLockImpl.h
 bool SimpleLRU::Get(const std::string &key, std::string &value) { 
     // check if key in cache - set if in
-    for (auto it = _lru_index.begin(); it != _lru_index.end(); ++it) {
-        if (it->first.get() == key) {
-            value = _lru_index.at(key).get().value;
-            return true;
-        }
+
+    auto it = _lru_index.find(key);
+    if (it != _lru_index.end()) {
+        value = _lru_index.at(key).get().value;
+        return true;
     }
 
     // if not - check in list
